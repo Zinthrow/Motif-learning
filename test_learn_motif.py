@@ -9,6 +9,8 @@ import numpy as np
 
 class MEME():
     def __init__(self):
+        self.motif = {}
+        self.background = {}
         self.s = open('hw1_example2.txt','r')
         self.s = self.s.readlines()
         self.W = 10 # width of proposed motif subsequence
@@ -45,7 +47,7 @@ class MEME():
             self.pt[1][ptx] = .1
             self.pt[2][ptx] = .1
             self.pt[3][ptx] = .7
-    
+     
     def p_start(self,start):
         bA = 0
         bT = 0
@@ -88,37 +90,48 @@ class MEME():
         if pt_score > p_score:
             self.p = np.array(self.pt)
             self.z = np.array(self.zt)
-    
-    def expectation(self, x, y):
-        '''motif = self.s[y][x:(x+self.W)]
-        if x == 0:
-            background = self.s[y][x+self.W:self.L]
-        elif x > 0:
-            background = self.s[y][0:x] + self.s[y][x+self.W:self.L]'''
-        W = self.W
-        e_score = 1
-        for ind, c in enumerate(self.s[y]):
-            if ind < x or ind > (x+W):
-                if c == 'A':
-                    e_score = e_score*self.pt[0][0]
-                elif c == 'T':
-                    e_score = e_score*self.pt[1][0]
-                elif c == 'G':
-                    e_score = e_score*self.pt[2][0]
-                elif c == 'C':
-                    e_score = e_score*self.pt[3][0]
-            elif ind > x and ind < (x+W):
-                if c == 'A':
-                    e_score = e_score*self.pt[0][ind-x]
-                elif c == 'T':
-                    e_score = e_score*self.pt[1][ind-x]
-                elif c == 'G':
-                    e_score = e_score*self.pt[2][ind-x]
-                elif c == 'C':
-                    e_score = e_score*self.pt[3][ind-x]
-       
-        return e_score
             
+    def z_set(self,e_temp, y):
+        e_max = np.argmax(e_temp)
+        prev_e = np.argmax(zt[y])
+        zt[y][prev_e] = 0
+        zt[y][e_max] = 1
+        self.motif[y] = self.s[y][e_max:(e_max+self.W)]
+        if e_max == 0:
+            self.background[y] = self.s[y][e_max+self.W:self.L]
+        elif e_max > 0:
+            self.background[y] = self.s[y][0:x] + self.s[y][x+self.W:self.L]
+        
+    def expectation(self,y,i):
+        e_temp = [] #Expectation values of EM algorithm
+        for x,j in enumerate(i):
+            #e_temp.append(self.expectation(x,y))
+            
+            W = self.W
+            e_score = 1
+            for ind, c in enumerate(self.s[y]):
+                if ind < x or ind > (x+W):
+                    if c == 'A':
+                        e_score = e_score*self.pt[0][0]
+                    elif c == 'T':
+                        e_score = e_score*self.pt[1][0]
+                    elif c == 'G':
+                        e_score = e_score*self.pt[2][0]
+                    elif c == 'C':
+                        e_score = e_score*self.pt[3][0]
+                elif ind > x and ind < (x+W):
+                    if c == 'A':
+                        e_score = e_score*self.pt[0][ind-x]
+                    elif c == 'T':
+                        e_score = e_score*self.pt[1][ind-x]
+                    elif c == 'G':
+                        e_score = e_score*self.pt[2][ind-x]
+                    elif c == 'C':
+                        e_score = e_score*self.pt[3][ind-x]
+            e_temp.append(e_score)
+            self.z_set(e_temp, y)
+    def maximization(self):
+        
     def OOPs_start(self):
         for start in range(self.m):
             if start > 0:
@@ -128,11 +141,9 @@ class MEME():
                 self.zt[0][start] = 1
             self.p_start(start)
             for y,i in enumerate(self.s[1:][:self.m]):
-                e_temp = [] #Expectation values of EM algorithm
                 if start < 1:
                     self.zt.append([0]*(self.L))
-                for x,j in enumerate(i):
-                    e_temp.append(self.expectation(x,y))
-            self.pz_max(self.pt)
+                self.expectation(y,i)
                 
-        
+            self.pz_max(self.pt)
+  
