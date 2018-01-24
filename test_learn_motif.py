@@ -7,16 +7,16 @@ Created on Fri Jan 19 11:20:54 2018
 import argparse, os, sys
 import numpy as np
 
-class MEME(self):
+class MEME():
     def __init__(self):
-        s = open('hw1_example2.txt','r')
-        s = s.readlines()
+        self.s = open('hw1_example2.txt','r')
+        self.s = self.s.readlines()
         self.W = 10 # width of proposed motif subsequence
-        self.L = len(s[0])-1 # Length of each sequence
-        self.n = len(s)
-        self.m = L-W+1 #possible starting points
-        self.z = [[0]*L] #where the motif actually starts, values are binary
-        self.zt = [[0]*L]
+        self.L = len(self.s[0])-1 # Length of each sequence
+        self.n = len(self.s)
+        self.m = self.L-self.W+1 #possible starting points
+        self.z = [[0]*self.L] #where the motif actually starts, values are binary
+        self.zt = [[0]*self.L]
         self.p = [[],[],[],[]] #current best probability
         self.pt = [[],[],[],[]] #probability table -temporary
         self.best_start = 0
