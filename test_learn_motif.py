@@ -17,7 +17,7 @@ class MEME():
         self.L = len(self.s[0])-1 # Length of each sequence
         self.n = len(self.s)
         self.m = self.L-self.W+1 #possible starting points
-        self.z = [[0]*self.L] #where the motif actually starts, values are binary
+        self.z = [[0]*self.L] #matrix for motif starts, values are binary
         self.zt = [[0]*self.L]
         self.p = [[],[],[],[]] #current best probability
         self.pt = [[],[],[],[]] #probability table -temporary
@@ -78,7 +78,7 @@ class MEME():
         self.pt[2][0] = (bG+1)/(m+4)
         self.pt[3][0] = (bC +1)/(m+4)        
         
-    def pz_max(self): #if the temp p matrix pt is better than p, update
+    def pz_max(self): #if the temp p-matrix "pt" is better than "p", update "p"
         p_transp = np.transpose(self.p)
         pt_transp = np.transpose(self.pt)
         p_score = 0
@@ -92,15 +92,17 @@ class MEME():
             self.z = np.array(self.zt)
             
     def z_set(self,e_temp, y):
+        W = self.W
+        L = self.L
         e_max = np.argmax(e_temp)
-        prev_e = np.argmax(zt[y])
-        zt[y][prev_e] = 0
-        zt[y][e_max] = 1
-        self.motif[y] = self.s[y][e_max:(e_max+self.W)]
+        prev_e = np.argmax(self.zt[y])
+        self.zt[y][prev_e] = 0
+        self.zt[y][e_max] = 1
+        self.motif[y] = self.s[y][e_max:(e_max+W)]
         if e_max == 0:
-            self.background[y] = self.s[y][e_max+self.W:self.L]
+            self.background[y] = self.s[y][e_max+W:L]
         elif e_max > 0:
-            self.background[y] = self.s[y][0:x] + self.s[y][x+self.W:self.L]
+            self.background[y] = self.s[y][0:e_max] + self.s[y][e_max+W:L]
         
     def expectation(self,y,i):
         e_temp = [] #Expectation values of EM algorithm
@@ -129,8 +131,9 @@ class MEME():
                     elif c == 'C':
                         e_score = e_score*self.pt[3][ind-x]
             e_temp.append(e_score)
-            self.z_set(e_temp, y)
-    def maximization(self):
+        self.z_set(e_temp, y)
+        
+    #def maximization(self):
         
     def OOPs_start(self):
         for start in range(self.m):
@@ -143,7 +146,11 @@ class MEME():
             for y,i in enumerate(self.s[1:][:self.m]):
                 if start < 1:
                     self.zt.append([0]*(self.L))
-                self.expectation(y,i)
-                
+                self.expectation(y,i)   
             self.pz_max(self.pt)
-  
+        print (self.zt)
+        print (self.z)
+        print (self.pt)
+        
+meme = MEME()
+meme.OOPs_start()
