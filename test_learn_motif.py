@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Jan 19 11:20:54 2018
-
 @author: Alex
 """
 import argparse, os, sys
@@ -21,7 +20,7 @@ class MEME(self):
         self.pt = [[],[],[],[]]
         self.best_start = 0
     
-    def letter_score(self, x, ptx):
+    def start_score(self, x, ptx):
         if x == 'A':
             self.pt[0][ptx] = .7
             self.pt[1][ptx] = .1
@@ -45,6 +44,8 @@ class MEME(self):
             self.pt[1][ptx] = .1
             self.pt[2][ptx] = .1
             self.pt[3][ptx] = .7
+    
+    def letter_score(self, x, ztx)
             
     def p_start(self,start):
         bA = 0
@@ -67,7 +68,7 @@ class MEME(self):
                     bC += 1
             elif num >= start and num <= start + W:
                 ptx += 1
-                letter_score(x,ptx)
+                start_score(x,ptx)
         
         self.pt[0][0] = (bA+1)/(m+4)
         self.pt[1][0] = (bT+1)/(m+4)
@@ -86,13 +87,24 @@ class MEME(self):
         if pt_score > p_score:
             self.p = self.pt
             self.z = self.zt
-    def OOPs_start(self):
-        for start in range(m):
+    
+    def expectation(self):
+        
             
+    def OOPs_start(self):
+        for start in range(self.m):
+            if start > 0:
+                zt[0][start-1] = 0
+                zt[0][start] = 1
+            else:
+                zt[0][start] = 1
             p_start(start)
-            for i in s[1:][:m]:
-                for j in i:
-            pz_max(pt)
+            for x,i in enumerate(s[1:][:m]):
+                e_temp = [] #Expectation values of EM algorithm
+                if start < 1:
+                    self.zt.append([0]*(self.L)
+                for y,j in enumerate(i):
+                    
+            pz_max(self.pt)
                 
-        
-        
+   
