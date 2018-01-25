@@ -76,15 +76,15 @@ class MEME():
         self.pt[3][0] = (bC +1)/(m+3)        
         
     def pz_max(self): #if the temp p-matrix "pt" is better than "p", update "p"
-        if self.p == []:
+        if self.p is []:
             self.p = np.ones((4,self.W+1))
         p_transp = np.transpose(self.p)
         pt_transp = np.transpose(self.pt)
         p_score = 0
         pt_score = 0
-        for a in p_transp:
+        for a in p_transp[1:]:
             p_score += max(a)
-        for b in pt_transp:
+        for b in pt_transp[1:]:
             pt_score += max(b)
             
         if pt_score > p_score:
@@ -108,7 +108,6 @@ class MEME():
         e_temp = [] #Expectation values of EM algorithm
         for x,j in enumerate(i):
             #e_temp.append(self.expectation(x,y))
-            
             W = self.W
             e_score = 1
             for ind, c in enumerate(self.s[y]):
@@ -133,9 +132,49 @@ class MEME():
             e_temp.append(e_score)
         self.z_set(e_temp, y)
         
-    #def maximization(self):
-        
+    def maximization(self,y,seq):
+        if seq is self.background:
+            A = 0
+            T = 0
+            G = 0
+            C = 0
+            total = 0
+            for seq_num in range(y):
+                current = seq[seq_num]
+                for x in current:
+                    if x == 'A':
+                        A += 1
+                    elif x == 'T':
+                        T += 1
+                    elif x == 'G':
+                        G += 1
+                    elif x == 'C':
+                        C += 1
+                    total += 1
+            
+            self.pt[0][0] = (A+1)/(total+3)
+            self.pt[1][0] = (T+1)/(total+3)
+            self.pt[2][0] = (G+1)/(total+3)
+            self.pt[3][0] = (C+1)/(total+3)
+        elif seq is self.motif:
+            matrix_count = np.zeros(5,self.W) #matrix counting A T G C & total
+            for seq_num in range(y):
+                current = seq[seq_num]
+                for motif_pos,x in enumerate(current):
+                    if x == 'A':
+                        matrix_count[motif_pos][0] += 1
+                    elif x == 'T':
+                        matrix_count[motif_pos][1] += 1
+                    elif x == 'G':
+                        matrix_count[motif_pos][2] += 1
+                    elif x == 'C':
+                        matrix_count[motif_pos][3] += 1
+                    matrix_count[motif_pos][4] += 1
+            for nuc in self.pt:
+                for pos in nuc[1:]:
+                    
     def OOPs_start(self):
+        print (self.m)
         for start in range(self.m):
             if start > 0:
                 self.zt[0][start-1] = 0
@@ -151,6 +190,6 @@ class MEME():
         print (self.zt)
         print (self.z)
         print (self.pt)
+        
 meme = MEME()
 meme.OOPs_start()
-        
