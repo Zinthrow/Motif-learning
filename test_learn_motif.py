@@ -19,8 +19,8 @@ class MEME():
         self.m = self.L-self.W+1 #possible starting points
         self.z = [[0]*self.L] #matrix for motif starts, values are binary
         self.zt = [[0]*self.L]
-        self.p = [[],[],[],[]] #current best probability
-        self.pt = [[],[],[],[]] #probability table -temporary
+        self.p = [] #current best probability
+        self.pt = [] #probability table -temporary
         self.best_start = 0
     
     def start_score(self, x, ptx):
@@ -56,11 +56,9 @@ class MEME():
         ptx = 0
         W = self.W
         m = self.m
-        for x in self.pt:
-            x = [0]*(W+1)
-        
+        self.pt = np.ones((4,W+1))
         for num, x in enumerate(self.s[0]):
-            if num < start or num > start + W:
+            if num < start or num >= start + W:
                 if x == 'A':
                     bA += 1
                 elif x == 'T':
@@ -72,19 +70,21 @@ class MEME():
             elif num >= start and num <= start + W:
                 ptx += 1
                 self.start_score(x,ptx)
-        
-        self.pt[0][0] = (bA+1)/(m+4)
-        self.pt[1][0] = (bT+1)/(m+4)
-        self.pt[2][0] = (bG+1)/(m+4)
-        self.pt[3][0] = (bC +1)/(m+4)        
+        self.pt[0][0] = (bA+1)/(m+3)
+        self.pt[1][0] = (bT+1)/(m+3)
+        self.pt[2][0] = (bG+1)/(m+3)
+        self.pt[3][0] = (bC +1)/(m+3)        
         
     def pz_max(self): #if the temp p-matrix "pt" is better than "p", update "p"
+        if self.p == []:
+            self.p = np.ones((4,self.W+1))
         p_transp = np.transpose(self.p)
         pt_transp = np.transpose(self.pt)
         p_score = 0
         pt_score = 0
-        for a,b in p_transp,pt_transp:
+        for a in p_transp:
             p_score += max(a)
+        for b in pt_transp:
             pt_score += max(b)
             
         if pt_score > p_score:
@@ -147,10 +147,10 @@ class MEME():
                 if start < 1:
                     self.zt.append([0]*(self.L))
                 self.expectation(y,i)   
-            self.pz_max(self.pt)
+            self.pz_max()
         print (self.zt)
         print (self.z)
         print (self.pt)
-        
 meme = MEME()
 meme.OOPs_start()
+        
