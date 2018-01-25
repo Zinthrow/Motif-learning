@@ -17,8 +17,8 @@ class MEME():
         self.L = len(self.s[0])-1 # Length of each sequence
         self.n = len(self.s)
         self.m = self.L-self.W+1 #possible starting points
-        self.z = [[0]*self.L] #matrix for motif starts, values are binary
-        self.zt = [[0]*self.L]
+        self.z = [[0]*(self.m)] #matrix for motif starts, values are binary
+        self.zt = [[0]*(self.m)]
         self.p = [] #current best probability
         self.pt = [] #probability table -temporary
         self.best_start = 0
@@ -107,10 +107,9 @@ class MEME():
     def expectation(self,y,i):
         e_temp = [] #Expectation values of EM algorithm
         for x,j in enumerate(i):
-            #e_temp.append(self.expectation(x,y))
             W = self.W
             e_score = 1
-            for ind, c in enumerate(self.s[y]):
+            for ind, c in enumerate(self.s[y][:self.m]):
                 if ind < x or ind > (x+W):
                     if c == 'A':
                         e_score = e_score*self.pt[0][0]
@@ -177,24 +176,24 @@ class MEME():
                             matrix_count[4][stat]+4)
                                         
     def OOPs_start(self):
-        print (self.m)
-        for start in range(self.m):
+        m = self.m
+        for start in range(m):
+            self.p_start(start)
             if start > 0:
-                self.zt[0][start-1] = 0
+                self.zt[0][np.argmax(self.zt[0])] = 0
                 self.zt[0][start] = 1
             else:
                 self.zt[0][start] = 1
-            self.p_start(start)
-            for y,i in enumerate(self.s[1:][:self.m]):
+            for y,i in enumerate(self.s[1:]):
                 if start < 1:
-                    self.zt.append([0]*(self.L))
+                    self.zt.append([0]*m)
                 self.expectation(y,i)   
                 self.maximization(y,self.motif)
                 self.maximization(y,self.background)
             self.pz_max()
         print (self.zt)
-        print (self.z)
         print (self.pt)
+        print (self.p)
         
 meme = MEME()
 meme.OOPs_start()
