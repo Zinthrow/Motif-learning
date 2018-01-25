@@ -133,6 +133,7 @@ class MEME():
         self.z_set(e_temp, y)
         
     def maximization(self,y,seq):
+        W = self.W
         if seq is self.background:
             A = 0
             T = 0
@@ -157,22 +158,24 @@ class MEME():
             self.pt[2][0] = (G+1)/(total+3)
             self.pt[3][0] = (C+1)/(total+3)
         elif seq is self.motif:
-            matrix_count = np.zeros(5,self.W) #matrix counting A T G C & total
+            matrix_count = np.zeros((5,W)) #matrix counting A T G C & total
             for seq_num in range(y):
                 current = seq[seq_num]
                 for motif_pos,x in enumerate(current):
                     if x == 'A':
-                        matrix_count[motif_pos][0] += 1
+                        matrix_count[0][motif_pos] += 1
                     elif x == 'T':
-                        matrix_count[motif_pos][1] += 1
+                        matrix_count[1][motif_pos] += 1
                     elif x == 'G':
-                        matrix_count[motif_pos][2] += 1
+                        matrix_count[2][motif_pos] += 1
                     elif x == 'C':
-                        matrix_count[motif_pos][3] += 1
-                    matrix_count[motif_pos][4] += 1
-            for nuc in self.pt:
-                for pos in nuc[1:]:
-                    
+                        matrix_count[3][motif_pos] += 1
+                    matrix_count[4][motif_pos] += 1
+            for x in range(4):
+                for stat in range(self.W):
+                    self.pt[x][stat+1] = (matrix_count[x][stat]+1)/(
+                            matrix_count[4][stat]+4)
+                                        
     def OOPs_start(self):
         print (self.m)
         for start in range(self.m):
@@ -186,6 +189,8 @@ class MEME():
                 if start < 1:
                     self.zt.append([0]*(self.L))
                 self.expectation(y,i)   
+                self.maximization(y,self.motif)
+                self.maximization(y,self.background)
             self.pz_max()
         print (self.zt)
         print (self.z)
