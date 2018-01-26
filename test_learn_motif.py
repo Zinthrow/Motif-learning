@@ -4,6 +4,9 @@ Created on Fri Jan 19 11:20:54 2018
 @author: Alex
 """
 
+import argparse, os, sys
+import numpy as np
+
 class MEME():
     def __init__(self):
         self.motif = {}
@@ -83,6 +86,7 @@ class MEME():
         
         for a in p_transp[1:]:
             p_score += max(a)
+            
         for b in pt_transp[1:]:
             pt_score += max(b)
             
@@ -164,7 +168,6 @@ class MEME():
             prob[2][0] = (G+1)/(total+3)
             prob[3][0] = (C+1)/(total+3)
         elif seq is self.motif:
-            print ("fired")
             matrix_count = np.zeros((5,W)) #matrix counting A T G C & total
             for seq_num in range(y):
                 if prob is self.pt:
@@ -181,7 +184,7 @@ class MEME():
                         matrix_count[3][motif_pos] += 1
                     matrix_count[4][motif_pos] += 1
             for x in range(4):
-                for stat in range(self.W): #stat is the index of wanted p_value
+                for stat in range(self.W): #stat is the index of next p_value
                     p_val = (matrix_count[x][stat]+1)/(matrix_count[4][stat]+4)
                     self.delta_p[x][stat+1] = abs(1-(prob[x][stat+1]/p_val))
                     prob[x][stat+1] = p_val
@@ -212,22 +215,24 @@ class MEME():
                 self.maximization(y,self.motif, self.pt)
                 self.maximization(y,self.background, self.pt)
             self.pz_max()
-        print ('finished')
+        print ('starting position decided')
+        print (self.p)
         
     def OOPS_complete(self):
         run = True
         while run:
-            print ('ran')
             for y,i in enumerate(self.s):
                 self.expectation(y,i,self.p)
-                self.maximization(y,self.motif,self.pt)
-                self.maximization(y,self.background, self.pt)
+                self.maximization(y,self.motif,self.p)
+                self.maximization(y,self.background, self.p)
                 run = self.percent_stats()
-            print (self.delta_p)
+            
                 
     def OOPS(self):
         self.OOPS_start()
-        self.OOPS_complete()
+        #self.OOPS_complete()
             
+        
 meme = MEME()
 meme.OOPS()
+        
