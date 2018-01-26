@@ -4,9 +4,6 @@ Created on Fri Jan 19 11:20:54 2018
 @author: Alex
 """
 
-import argparse, os, sys
-import numpy as np
-
 class MEME():
     def __init__(self):
         self.motif = {}
@@ -21,6 +18,7 @@ class MEME():
         self.zt = [[0]*(self.m)]
         self.p = [] #current best probability
         self.pt = [] #probability table -temporary
+        self.delta_p = np.zeros((4,self.W+1))
         self.best_start = 0
     
     def start_score(self, x, ptx):
@@ -82,6 +80,7 @@ class MEME():
         pt_transp = np.transpose(self.pt)
         p_score = 0
         pt_score = 0
+        
         for a in p_transp[1:]:
             p_score += max(a)
         for b in pt_transp[1:]:
@@ -91,20 +90,26 @@ class MEME():
             self.p = np.array(self.pt)
             self.z = np.array(self.zt)
             
-    def z_set(self,e_temp, y):
+    def z_set(self,e_temp, y, prob):
+        if prob is self.pt:
+            prob = self.zt
+        else:
+            prob = self.z
         W = self.W
         L = self.L
         e_max = np.argmax(e_temp)
-        prev_e = np.argmax(self.zt[y])
-        self.zt[y][prev_e] = 0
-        self.zt[y][e_max] = 1
+        prev_e = np.argmax(prob[y])
+        prob[y][prev_e] = 0
+        prob[y][e_max] = 1
         self.motif[y] = self.s[y][e_max:(e_max+W)]
         if e_max == 0:
             self.background[y] = self.s[y][e_max+W:L]
         elif e_max > 0:
             self.background[y] = self.s[y][0:e_max] + self.s[y][e_max+W:L]
+    
+    
         
-    def expectation(self,y,i):
+    def expectation(self,y,i,prob):
         e_temp = [] #Expectation values of EM algorithm
         for x,j in enumerate(i):
             W = self.W
@@ -112,26 +117,26 @@ class MEME():
             for ind, c in enumerate(self.s[y][:self.m]):
                 if ind < x or ind > (x+W):
                     if c == 'A':
-                        e_score = e_score*self.pt[0][0]
+                        e_score = e_score*prob[0][0]
                     elif c == 'T':
-                        e_score = e_score*self.pt[1][0]
+                        e_score = e_score*prob[1][0]
                     elif c == 'G':
-                        e_score = e_score*self.pt[2][0]
+                        e_score = e_score*prob[2][0]
                     elif c == 'C':
-                        e_score = e_score*self.pt[3][0]
+                        e_score = e_score*prob[3][0]
                 elif ind > x and ind < (x+W):
                     if c == 'A':
-                        e_score = e_score*self.pt[0][ind-x]
+                        e_score = e_score*prob[0][ind-x]
                     elif c == 'T':
-                        e_score = e_score*self.pt[1][ind-x]
+                        e_score = e_score*prob[1][ind-x]
                     elif c == 'G':
-                        e_score = e_score*self.pt[2][ind-x]
+                        e_score = e_score*prob[2][ind-x]
                     elif c == 'C':
-                        e_score = e_score*self.pt[3][ind-x]
+                        e_score = e_score*prob[3][ind-x]
             e_temp.append(e_score)
-        self.z_set(e_temp, y)
+        self.z_set(e_temp, y, prob)
         
-    def maximization(self,y,seq):
+    def maximization(self,y,seq, prob):
         W = self.W
         if seq is self.background:
             A = 0
@@ -140,6 +145,8 @@ class MEME():
             C = 0
             total = 0
             for seq_num in range(y):
+                if prob is self.pt:
+                    seq_num += 1
                 current = seq[seq_num]
                 for x in current:
                     if x == 'A':
@@ -152,13 +159,16 @@ class MEME():
                         C += 1
                     total += 1
             
-            self.pt[0][0] = (A+1)/(total+3)
-            self.pt[1][0] = (T+1)/(total+3)
-            self.pt[2][0] = (G+1)/(total+3)
-            self.pt[3][0] = (C+1)/(total+3)
+            prob[0][0] = (A+1)/(total+3)
+            prob[1][0] = (T+1)/(total+3)
+            prob[2][0] = (G+1)/(total+3)
+            prob[3][0] = (C+1)/(total+3)
         elif seq is self.motif:
+            print ("fired")
             matrix_count = np.zeros((5,W)) #matrix counting A T G C & total
             for seq_num in range(y):
+                if prob is self.pt:
+                    seq_num += 1
                 current = seq[seq_num]
                 for motif_pos,x in enumerate(current):
                     if x == 'A':
@@ -171,11 +181,21 @@ class MEME():
                         matrix_count[3][motif_pos] += 1
                     matrix_count[4][motif_pos] += 1
             for x in range(4):
-                for stat in range(self.W):
-                    self.pt[x][stat+1] = (matrix_count[x][stat]+1)/(
-                            matrix_count[4][stat]+4)
-                                        
-    def OOPs_start(self):
+                for stat in range(self.W): #stat is the index of wanted p_value
+                    p_val = (matrix_count[x][stat]+1)/(matrix_count[4][stat]+4)
+                    self.delta_p[x][stat+1] = abs(1-(prob[x][stat+1]/p_val))
+                    prob[x][stat+1] = p_val
+                    
+    def percent_stats(self):
+        run = True
+        stop_row =[]
+        for row in self.delta_p:
+            stop_row.append(max(row))
+        if max(stop_row) <= .005:
+            run = False
+        return run
+            
+    def OOPS_start(self):
         m = self.m
         for start in range(m):
             self.p_start(start)
@@ -185,15 +205,29 @@ class MEME():
             else:
                 self.zt[0][start] = 1
             for y,i in enumerate(self.s[1:]):
+                y += 1
                 if start < 1:
                     self.zt.append([0]*m)
-                self.expectation(y,i)   
-                self.maximization(y,self.motif)
-                self.maximization(y,self.background)
+                self.expectation(y,i,self.pt)
+                self.maximization(y,self.motif, self.pt)
+                self.maximization(y,self.background, self.pt)
             self.pz_max()
-        print (self.zt)
-        print (self.pt)
-        print (self.p)
+        print ('finished')
         
+    def OOPS_complete(self):
+        run = True
+        while run:
+            print ('ran')
+            for y,i in enumerate(self.s):
+                self.expectation(y,i,self.p)
+                self.maximization(y,self.motif,self.pt)
+                self.maximization(y,self.background, self.pt)
+                run = self.percent_stats()
+            print (self.delta_p)
+                
+    def OOPS(self):
+        self.OOPS_start()
+        self.OOPS_complete()
+            
 meme = MEME()
-meme.OOPs_start()
+meme.OOPS()
