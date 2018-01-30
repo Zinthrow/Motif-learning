@@ -11,6 +11,8 @@ class MEME():
     def __init__(self):
         self.motif = {}
         self.background = {}
+        self.motif_max = None
+        self.background_max = None
         self.s = open('hw1_example2.txt','r')
         self.s = self.s.readlines()
         self.W = 10 # width of proposed motif subsequence
@@ -90,9 +92,14 @@ class MEME():
         for b in pt_transp[1:]:
             pt_score += max(b)
             
+        print (pt_transp)
+        
+            
         if pt_score > p_score:
             self.p = np.array(self.pt)
             self.z = np.array(self.zt)
+            self.motif_max = dict(self.motif)
+            self.background_max = dict(self.background)
             
     def z_set(self,e_temp, y, prob):
         if prob is self.pt:
@@ -219,6 +226,8 @@ class MEME():
         print (self.p)
         
     def OOPS_complete(self):
+        self.motif = self.motif_max
+        self.background = self.background_max
         run = True
         while run:
             for y,i in enumerate(self.s):
@@ -230,6 +239,7 @@ class MEME():
                 
     def OOPS(self):
         self.OOPS_start()
+        print (self.motif_max)
         #self.OOPS_complete()
             
         
