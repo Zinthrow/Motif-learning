@@ -17,14 +17,13 @@ class MEME():
         self.s = self.s.readlines()
         self.W = 10 # width of proposed motif subsequence
         self.L = len(self.s[0])-1 # Length of each sequence
-        self.n = len(self.s)
+        self.n = len(self.s) #total number of sequences
         self.m = self.L-self.W+1 #possible starting points
         self.z = [[0]*(self.m)] #matrix for motif starts, values are binary
-        self.zt = [[0]*(self.m)]
+        self.zt = [[0]*(self.m)]#temporary matrix for motif starts
         self.p = [] #current best probability
         self.pt = [] #probability table -temporary
-        self.delta_p = np.zeros((4,self.W+1))
-        self.best_start = 0
+        self.delta_p = np.zeros((4,self.W+1))#change in p per iteration
     
     def start_score(self, x, ptx):
         if x == 'A':
@@ -76,7 +75,12 @@ class MEME():
         self.pt[0][0] = (bA+1)/(m+3)
         self.pt[1][0] = (bT+1)/(m+3)
         self.pt[2][0] = (bG+1)/(m+3)
-        self.pt[3][0] = (bC +1)/(m+3)        
+        self.pt[3][0] = (bC +1)/(m+3)
+        self.motif[0] = self.s[0][start:(start+W)]
+        if start == 0:
+            self.background[start] = self.s[0][start+W:self.L]
+        elif start > 0:
+            self.background[0] = self.s[0][0:start] + self.s[0][start+W:self.L]
         
     def pz_max(self): #if the temp p-matrix "pt" is better than "p", update "p"
         if self.p is []:
@@ -86,13 +90,11 @@ class MEME():
         p_score = 0
         pt_score = 0
         
-        for a in p_transp[1:]:
+        for a in p_transp:
             p_score += max(a)
             
-        for b in pt_transp[1:]:
+        for b in pt_transp:
             pt_score += max(b)
-            
-        print (pt_transp)
         
             
         if pt_score > p_score:
@@ -100,6 +102,7 @@ class MEME():
             self.z = np.array(self.zt)
             self.motif_max = dict(self.motif)
             self.background_max = dict(self.background)
+            print (np.argmax(self.z[0]))
             
     def z_set(self,e_temp, y, prob):
         if prob is self.pt:
@@ -118,14 +121,13 @@ class MEME():
         elif e_max > 0:
             self.background[y] = self.s[y][0:e_max] + self.s[y][e_max+W:L]
     
-    
         
     def expectation(self,y,i,prob):
         e_temp = [] #Expectation values of EM algorithm
-        for x,j in enumerate(i):
+        for x in range(self.m):
             W = self.W
             e_score = 1
-            for ind, c in enumerate(self.s[y][:self.m]):
+            for ind, c in enumerate(i):
                 if ind < x or ind > (x+W):
                     if c == 'A':
                         e_score = e_score*prob[0][0]
@@ -135,20 +137,22 @@ class MEME():
                         e_score = e_score*prob[2][0]
                     elif c == 'C':
                         e_score = e_score*prob[3][0]
-                elif ind > x and ind < (x+W):
+                elif ind >= x and ind < (x+W):
                     if c == 'A':
-                        e_score = e_score*prob[0][ind-x]
+                        e_score = e_score*prob[0][ind-x+1]
                     elif c == 'T':
-                        e_score = e_score*prob[1][ind-x]
+                        e_score = e_score*prob[1][ind-x+1]
                     elif c == 'G':
-                        e_score = e_score*prob[2][ind-x]
+                        e_score = e_score*prob[2][ind-x+1]
                     elif c == 'C':
-                        e_score = e_score*prob[3][ind-x]
+                        e_score = e_score*prob[3][ind-x+1]
             e_temp.append(e_score)
         self.z_set(e_temp, y, prob)
         
     def maximization(self,y,seq, prob):
         W = self.W
+        if prob is self.p:
+            y = self.n-1
         if seq is self.background:
             A = 0
             T = 0
@@ -190,6 +194,7 @@ class MEME():
                     elif x == 'C':
                         matrix_count[3][motif_pos] += 1
                     matrix_count[4][motif_pos] += 1
+                    
             for x in range(4):
                 for stat in range(self.W): #stat is the index of next p_value
                     p_val = (matrix_count[x][stat]+1)/(matrix_count[4][stat]+4)
@@ -223,24 +228,26 @@ class MEME():
                 self.maximization(y,self.background, self.pt)
             self.pz_max()
         print ('starting position decided')
-        print (self.p)
-        
-    def OOPS_complete(self):
         self.motif = self.motif_max
         self.background = self.background_max
+        
+        
+    def OOPS_complete(self):
         run = True
         while run:
             for y,i in enumerate(self.s):
                 self.expectation(y,i,self.p)
                 self.maximization(y,self.motif,self.p)
                 self.maximization(y,self.background, self.p)
-                run = self.percent_stats()
+            run = self.percent_stats()
+            print ('running')
+            print (self.p)
             
                 
     def OOPS(self):
         self.OOPS_start()
-        print (self.motif_max)
-        #self.OOPS_complete()
+        print (self.p)
+        self.OOPS_complete()
             
         
 meme = MEME()
